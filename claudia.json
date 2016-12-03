@@ -1,0 +1,11 @@
+{
+  "lambda": {
+    "role": "chore-bot-executor",
+    "name": "chore-bot",
+    "region": "us-west-1"
+  },
+  "api": {
+    "id": "ek4t27eyme",
+    "module": "lib/src/bot"
+  }
+}

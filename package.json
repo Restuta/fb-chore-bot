@@ -4,9 +4,11 @@
   "description": "Facebook Messenger Bot that makes sure you do your chores",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_PATH=./src node index.js",
+    "start": "ntl",
     "dev": "NODE_PATH=./src nodemon index.js --ext js --ignore img/",
+    "deploy:claudia" : "claudia update",
     "build": "NODE_PATH=./src babel src/bot.js -d lib",
+    "deploy": "npm run build && npm run deploy:claudia",
     "eslint": "eslint lib/ --ext .js || true",
     "eslint:fix": "eslint lib/ --ext .js --fix || true",
     "test": "echo \"Error: no test specified\" && exit 1"
