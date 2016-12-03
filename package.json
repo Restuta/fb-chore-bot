@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/Restuta/fb-chore-bot#readme",
   "dependencies": {
-    "botkit": "^0.4.2",
+    "botkit": "^0.4.2"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
