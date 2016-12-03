@@ -8,4 +8,4 @@ require('babel-register')({
   "plugins": ["add-module-exports"],
 })
 require('babel-polyfill')
-require('./src/server');
+require('./src/bot');

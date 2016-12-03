@@ -6,6 +6,7 @@
   "scripts": {
     "start": "NODE_PATH=./src node index.js",
     "dev": "NODE_PATH=./src nodemon index.js --ext js --ignore img/",
+    "build": "NODE_PATH=./src babel src/bot.js -d lib",
     "eslint": "eslint lib/ --ext .js || true",
     "eslint:fix": "eslint lib/ --ext .js --fix || true",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -30,6 +31,7 @@
     "claudia-bot-builder": "^2.7.1"
   },
   "devDependencies": {
+    "babel-cli": "^6.18.0",
     "babel-core": "^6.9.0",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-polyfill": "^6.9.0",
