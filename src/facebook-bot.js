@@ -65,6 +65,9 @@ This bot demonstrates many of the core features of Botkit:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+console.info(process.env)
+
+
 if (!process.env.page_token) {
     console.log('Error: Specify page_token in environment');
     process.exit(1);
@@ -107,11 +110,11 @@ var controller = Botkit.facebookbot({debug: true, access_token: process.env.page
 
 var bot = controller.spawn({});
 
-controller.setupWebserver(process.env.port || 3000, function(err, webserver) {
+controller.setupWebserver(process.env.PORT || 3000, function(err, webserver) {
     controller.createWebhookEndpoints(webserver, bot, function() {
         console.log('ONLINE!');
         if (ops.lt) {
-            var tunnel = localtunnel(process.env.port || 3000, {
+            var tunnel = localtunnel(process.env.PORT || 3000, {
                 subdomain: ops.ltsubdomain
             }, function(err, tunnel) {
                 if (err) {
@@ -234,9 +237,11 @@ controller.hears(['structured'], 'message_received', function(bot, message) {
     });
 });
 
-controller.on('facebook_postback', function(bot, message) {
-
+controller.on('facebook_postback', (bot, message) => {
     bot.reply(message, 'Great Choice!!!! (' + message.payload + ')');
+});
+
+controller.on('tick', (bot, event) => {
 
 });
 
