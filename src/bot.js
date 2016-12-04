@@ -3,31 +3,152 @@ import ClaudiaBotBuilder from 'claudia-bot-builder'
 import chalk from 'chalk'
 import { inspect } from './utils'
 import { Variations } from './bot-utils'
+import moment from 'moment'
 
 const DEBUG = msg => console.log(chalk.blue(msg))
-const INSPECT = obj => console.log(inspect(msg))
+const INSPECT = obj => console.log(inspect(obj))
 
 const FbTemplate = ClaudiaBotBuilder.fbTemplate
 
+const setReminder = (chore, bot, message) => {
+  const remindInMs = chore.nextReminderAt - moment()
+  const choreSetRelative = chore.createdAt.fromNow()
+
+  const cancelChore = convo => {
+    convo.say('You would have to provide a reason for canceling this chore, free form text.')
+    convo.ask('So what is it?', Variations()
+      .addDefault((res, convo) => {
+        if (res.text.length < 5) {
+          convo.say(`Ha ha, nice try, this is not a real reason, let's try one more time.`)
+          convo.repeat()
+          convo.next()
+        } else {
+          convo.say(`✍️ noted it down, and Chore is now canceled.`)
+          convo.next()
+        }
+      })
+      .get()
+    )
+    convo.next()
+  }
+
+  setTimeout(() => {
+    bot.startConversation(message, (err, convo) => {
+      convo.say(`Reminding "${chore.name}", set ${choreSetRelative}`)
+
+      const isItDone = new FbTemplate.Text('Is it done?')
+        .addQuickReply('Yes', 'yes')
+        .addQuickReply('No', 'no')
+        .addQuickReply('Cancel', 'cancel')
+        .get()
+
+      convo.ask(isItDone, Variations()
+        .add(bot.utterances.yes, (res, convo) => {
+          convo.ask('Please type "done", so I know that you are not lying.', Variations()
+            .add('done', (res, convo) => {
+              convo.say('Great! 😍')
+              convo.next()
+            })
+            .addDefault((res, convo) => {
+              convo.say(`Unfortunately I can't mark task as done so easely, otherwise you will be able to use this as`
+                + `a quick escape hatch when I get really annoying. But I have to make sure you really do your chores ¯\_(ツ)_/¯`)
+
+              const reply = new FbTemplate.Text(`If it's not done yet, just do nothing and I will remind you later or: `)
+                .addQuickReply('It is really done', 'really done')
+                .addQuickReply('Cancel', 'cancel')
+                .get()
+
+              convo.ask(reply, Variations()
+                .add('really done', (res, convo) => {
+                  convo.say('Ok, Great! 😍')
+                  convo.next()
+                })
+                .add('cancel', (res, convo) => {
+                  cancelChore(convo)
+                })
+                .addDefault((res, convo) => {
+                  convo.say(`Not sure what do you mean. Let's try one more time.`)
+                  convo.repeat()
+                  convo.next()
+                })
+                .get()
+              )
+
+              convo.next()
+            })
+            .get()
+          )
+
+          // convo.next()
+        })
+        .add(bot.utterances.no, (res, convo) => {
+          convo.say('Hm, ok 😐, will remind you later.')
+          convo.next()
+        })
+        .add('cancel', (res, convo) => {
+          cancelChore(convo)
+        })
+        .addDefault((res, convo) => {
+          convo.say(`Sorry, I didn't get it, yes or no?`)
+          convo.repeat()
+          convo.next()
+        })
+        .get()
+      )
+    })
+  }, remindInMs)
+}
+
+const newChore = ({name, whenToRemind}) => {
+  let nextReminderAt = moment()
+
+  switch(whenToRemind) {
+    case 'today':
+      nextReminderAt.add(5, 'seconds')
+      break
+    case 'tomorrow':
+      //tomorrow at 9am
+      nextReminderAt.add(1, 'day').hours(9).minutes(0)
+      break
+    case 'next week':
+      const dayOfWeek = nextReminderAt.day()
+      const daysToNextMonday = (7 - dayOfWeek) + 1
+      //next monday at 10am (so it doesn't interfere with 9am reminders)
+      nextReminderAt.add(daysToNextMonday, 'days')
+        .hours(10).minutes(0)
+      break
+    default:
+      moment().add(1, 'hour')
+  }
+
+  return {
+    name: name,
+    createdAt: moment(),
+    nextReminderAt: nextReminderAt,
+  }
+}
+
 //promises
 const getUserData = (controller, message) => {
+  DEBUG('message user:')
+  INSPECT(message.user)
+
   return new Promise((resolve, reject) => {
     controller.storage.users.get(message.user, (err, user) => {
       if (err) reject(err)
-
-      INSPECT(user)
-
       if (!user) {
-        user = { id: message.user }
+        user = {
+          id: message.user,
+          chores: []
+        }
+        //save user if it doesn't exist
+        controller.storage.users.save(user, (err, id) => {
+          if (err) reject(err)
+          resolve(user)
+        })
+      } else {
+        resolve(user)
       }
-
-      controller.storage.users.save(user, (err, id) => {
-        if (err) reject(err)
-
-        DEBUG('id:')
-        INSPECT(id)
-        resolve(id)
-      })
     })
   })
 }
@@ -74,7 +195,8 @@ const botBrain = controller => {
 
   controller.hears(['remind me (.*)'], 'message_received', (bot, message) => {
     const task = message.match[1]
-    getUserData()
+    // getUserData(controller, message)
+    //   .then(user => INSPECT(user))
 
     bot.startConversation(message, (err, convo) => {
       const whenToRemind = new FbTemplate.Text(`When do you want me to remind you "${task}"?`)
@@ -85,8 +207,17 @@ const botBrain = controller => {
 
       convo.ask(whenToRemind, Variations()
         .addDefault((response, convo) => {
-          convo.say(`Ok, I'll remind you "${task}" ${response.text} 🙌`)
-          convo.next()
+          getUserData(controller, message)
+            .then(user => {
+              INSPECT(user)
+              const chore = newChore({name: task, date: response.text})
+              user.chores.push(chore)
+
+              setReminder(chore, bot, message)
+
+              convo.say(`Ok, I'll remind you "${task}" ${response.text} 🙌`)
+              convo.next()
+            })
         })
         .get()
       )
