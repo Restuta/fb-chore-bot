@@ -41,7 +41,7 @@ class Store {
   }
 
   delete(id) {
-    this._items[id] = undefined
+    delete this._items[id]
   }
 
   all() {

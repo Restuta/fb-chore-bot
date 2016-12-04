@@ -1,13 +1,42 @@
 import os from 'os'
 import ClaudiaBotBuilder from 'claudia-bot-builder'
-
 import chalk from 'chalk'
+import { inspect } from './utils'
+import { Variations } from './bot-utils'
+
+const DEBUG = msg => console.log(chalk.blue(msg))
+const INSPECT = obj => console.log(inspect(msg))
 
 const FbTemplate = ClaudiaBotBuilder.fbTemplate
 
+//promises
+const getUserData = (controller, message) => {
+  return new Promise((resolve, reject) => {
+    controller.storage.users.get(message.user, (err, user) => {
+      if (err) reject(err)
+
+      INSPECT(user)
+
+      if (!user) {
+        user = { id: message.user }
+      }
+
+      controller.storage.users.save(user, (err, id) => {
+        if (err) reject(err)
+
+        DEBUG('id:')
+        INSPECT(id)
+        resolve(id)
+      })
+    })
+  })
+}
+
+
+
+
 const botBrain = controller => {
   controller.on('facebook_optin', (bot, message) => {
-
     bot.reply(message, 'Hi, I will make sure you never miss your chores. Just type something like "remind me to buy milk tomorrow" to get started.');
   });
 
@@ -17,57 +46,52 @@ const botBrain = controller => {
     setTimeout(() => {
       bot.startConversation(message, (err, convo) => {
         convo.say('Please buy milk')
-        console.info(chalk.blue('hey bots'))
 
-        const reply = new FbTemplate.Text('Is it done?')
+        const isItDone = new FbTemplate.Text('Is it done?')
           .addQuickReply('Yes', 'yes')
           .addQuickReply('No', 'no')
           .get()
 
-        convo.ask(reply, [{
-          pattern: 'yes|no',
-          callback: (response, convo) => {
-            convo.say('ok')
+        convo.ask(isItDone, Variations()
+          .add(bot.utterances.yes, (res, convo) => {
+            convo.say('Great!')
             convo.next()
-          }
-        }, {
-          default: true,
-          callback: (response, convo) => {
+          })
+          .add(bot.utterances.no, (res, convo) => {
+            convo.say('Hm, ok, will remind you later.')
+            convo.next()
+          })
+          .addDefault((res, convo) => {
             convo.say(`Sorry, I didn't get it, yes or no?`)
             convo.repeat()
             convo.next()
-          }
-        }])
-
-        // convo.ask(reply, (response, convo) => {
-        //
-        //   if(response.text.toLocaleLowerCase() === 'yes' || response.text === 'no') {
-        //     convo.say('got it')
-        //   } else {
-        //     convo.say('sorry, I didnt get it')
-        //     convo.repeat()
-        //   }
-        //
-        //   convo.next()
-        // })
+          })
+          .get()
+        )
       })
     }, 2000)
   })
 
-  controller.hears(['remind me (.*)'], (bot, message) => {
+  controller.hears(['remind me (.*)'], 'message_received', (bot, message) => {
+    const task = message.match[1]
+    getUserData()
+
     bot.startConversation(message, (err, convo) => {
-      const whenToRemind = new FbTemplate.Text(`When do you want me to remind you "${message.text}"?`)
-        .addQuickReply('Later Today')
-        .addQuickReply('Tomorrow')
-        .addQuickReply('Next Week')
+      const whenToRemind = new FbTemplate.Text(`When do you want me to remind you "${task}"?`)
+        .addQuickReply('Later Today', 'later today')
+        .addQuickReply('Tomorrow', 'tomorrow')
+        .addQuickReply('Next Week', 'next week')
         .get()
 
-      convo.say(whenToRemind, (response, convo) => {
-        convo.say(`Ok, will remind you ${response.text} 🙌`)
-      })
+      convo.ask(whenToRemind, Variations()
+        .addDefault((response, convo) => {
+          convo.say(`Ok, I'll remind you "${task}" ${response.text} 🙌`)
+          convo.next()
+        })
+        .get()
+      )
     })
   })
-
 
 
   controller.hears(['quick'], 'message_received', (bot, message) => {
@@ -263,30 +287,30 @@ const botBrain = controller => {
     });
   });
 
-  controller.hears(['shutdown'], 'message_received', (bot, message) => {
-    bot.startConversation(message, (err, convo) => {
-
-      convo.ask('Are you sure you want me to shutdown?', [
-        {
-          pattern: bot.utterances.yes,
-          callback: (response, convo) => {
-            convo.say('Bye!');
-            convo.next();
-            setTimeout(function() {
-              process.exit();
-            }, 3000);
-          }
-        }, {
-          pattern: bot.utterances.no,
-          default: true,
-          callback: (response, convo) => {
-            convo.say('*Phew!*');
-            convo.next();
-          }
-        }
-      ]);
-    });
-  });
+  // controller.hears(['shutdown'], 'message_received', (bot, message) => {
+  //   bot.startConversation(message, (err, convo) => {
+  //
+  //     convo.ask('Are you sure you want me to shutdown?', [
+  //       {
+  //         pattern: bot.utterances.yes,
+  //         callback: (response, convo) => {
+  //           convo.say('Bye!');
+  //           convo.next();
+  //           setTimeout(function() {
+  //             process.exit();
+  //           }, 3000);
+  //         }
+  //       }, {
+  //         pattern: bot.utterances.no,
+  //         default: true,
+  //         callback: (response, convo) => {
+  //           convo.say('*Phew!*');
+  //           convo.next();
+  //         }
+  //       }
+  //     ]);
+  //   });
+  // });
 
   controller.hears([
     'uptime', 'identify yourself', 'who are you', 'what is your name'
@@ -299,7 +323,7 @@ const botBrain = controller => {
   });
 
   controller.on('message_received', (bot, message) => {
-    bot.reply(message, 'Try "remind me to by milk tomorrow"');
+    bot.reply(message, 'Try somethink like "remind me to by milk tomorrow"');
     return false;
   });
 }
