@@ -11,6 +11,7 @@ const INSPECT = obj => console.log(inspect(obj))
 const FbTemplate = ClaudiaBotBuilder.fbTemplate
 
 const setReminder = (chore, bot, message) => {
+  DEBUG(chore.nextReminderAt.toString())
   const remindInMs = chore.nextReminderAt - moment()
   const choreSetRelative = chore.createdAt.fromNow()
 
@@ -31,6 +32,8 @@ const setReminder = (chore, bot, message) => {
     )
     convo.next()
   }
+
+  DEBUG('remind in ms: ' + remindInMs)
 
   setTimeout(() => {
     bot.startConversation(message, (err, convo) => {
@@ -79,7 +82,7 @@ const setReminder = (chore, bot, message) => {
             .get()
           )
 
-          // convo.next()
+          convo.next()
         })
         .add(bot.utterances.no, (res, convo) => {
           convo.say('Hm, ok 😐, will remind you later.')
@@ -102,8 +105,9 @@ const setReminder = (chore, bot, message) => {
 const newChore = ({name, whenToRemind}) => {
   let nextReminderAt = moment()
 
-  switch(whenToRemind) {
-    case 'today':
+  switch(whenToRemind.toLocaleLowerCase()) {
+    case 'later today':
+
       nextReminderAt.add(5, 'seconds')
       break
     case 'tomorrow':
@@ -118,7 +122,7 @@ const newChore = ({name, whenToRemind}) => {
         .hours(10).minutes(0)
       break
     default:
-      moment().add(1, 'hour')
+      nextReminderAt.add(1, 'hour')
   }
 
   return {
@@ -153,50 +157,30 @@ const getUserData = (controller, message) => {
   })
 }
 
-
-
-
 const botBrain = controller => {
   controller.on('facebook_optin', (bot, message) => {
     bot.reply(message, 'Hi, I will make sure you never miss your chores. Just type something like "remind me to buy milk tomorrow" to get started.');
   });
 
-  controller.hears(['test'], 'message_received', (bot, message) => {
-    bot.reply(message, 'scheduled in 5s')
-
-    setTimeout(() => {
-      bot.startConversation(message, (err, convo) => {
-        convo.say('Please buy milk')
-
-        const isItDone = new FbTemplate.Text('Is it done?')
-          .addQuickReply('Yes', 'yes')
-          .addQuickReply('No', 'no')
-          .get()
-
-        convo.ask(isItDone, Variations()
-          .add(bot.utterances.yes, (res, convo) => {
-            convo.say('Great!')
-            convo.next()
-          })
-          .add(bot.utterances.no, (res, convo) => {
-            convo.say('Hm, ok, will remind you later.')
-            convo.next()
-          })
-          .addDefault((res, convo) => {
-            convo.say(`Sorry, I didn't get it, yes or no?`)
-            convo.repeat()
-            convo.next()
-          })
-          .get()
-        )
+  controller.hears(['list'], 'message_received', (bot, message) => {
+    getUserData(controller, message)
+      .then(user => {
+        if (user.chores.length > 0) {
+          bot.reply(message, 'Here is the list of all your chores:');
+          setTimeout(() => {
+            user.chores.map(chore => {
+              const choreSetRelative = chore.createdAt.fromNow()
+              bot.reply(message, `"${chore.name}", set ${choreSetRelative}`)
+            })
+          }, 2000)
+        } else {
+            bot.reply(message, 'Your list is empty. Create your first chore by typing something like "remind me to by milk"')
+        }
       })
-    }, 2000)
   })
 
   controller.hears(['remind me (.*)'], 'message_received', (bot, message) => {
     const task = message.match[1]
-    // getUserData(controller, message)
-    //   .then(user => INSPECT(user))
 
     bot.startConversation(message, (err, convo) => {
       const whenToRemind = new FbTemplate.Text(`When do you want me to remind you "${task}"?`)
@@ -210,7 +194,9 @@ const botBrain = controller => {
           getUserData(controller, message)
             .then(user => {
               INSPECT(user)
-              const chore = newChore({name: task, date: response.text})
+
+              const chore = newChore({name: task, whenToRemind: response.text})
+              //TODO restuta: get rid of manual mutation, use SAVE instead
               user.chores.push(chore)
 
               setReminder(chore, bot, message)
