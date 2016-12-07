@@ -1,0 +1,111 @@
+Notes
+- UI mocks 
+	- intro https://botframe.com/editor/IkxljWhCzG
+
+
+- 1 Chore Bot
+	-
+- 2 They dont work
+- 3 Why?
+	- all of the reminders app work under one assumption "Humans are reliable and predictable and will 100% do a chore at the time the think they will." I mean srsly?
+	- we set them, but more ofthen then not ignore them
+	- as soon as we ignore we forget
+	- procrastination is a big deal
+- 4 Imaging yourself at the meeting
+- 5 and use see this
+	- what you are going todo? Exactly, nothing.
+	- what are the chances you will remember to do this thing after a meeting? Why do you have to remember?
+- 6 Competitos
+	- do not solve this problem
+	- UX is meh
+	- people use it inspite!
+- 7 example of what happens after you see reminder at the meeting
+- 8 another example
+- 9 slack, went one step forward, it lets you quickly resqhedule
+- 10 example
+- 11 why messenger bot
+	- we spend a lot of time in messenger, so it's the right time to poke you
+	- hard to ignore it since it's "unread message"
+	- it's everywhere automatically, web and mobile
+- 12 problem with apple reminders
+	- it's just to cumbersome to use
+- 13 siri
+	- a lot of people don't like to talk to phone
+	- it is still not reliable
+	- meeting problem is not solved
+- 14 one step forward would be to do what Slack did
+	- let your reschedule them quickly
+- 15 two steps forward
+	- automatically reminding about ignored chores
+	- keep reminding once in a while untill you take an action (snooze or done)
+- 16 three steps forward
+	- behaviour science and psychology
+	- make canceling and marking as done a little harder, so you less likely to cheat on a bot
+- 17 demo
+- 18 we still do our chores inspite of imperfect tools and sometimes it's tough for our significant others
+- 19 and remember
+
+
+Presentation
+	---- CHORE BOT
+		- there is only one problem with reminders – they don't work: and we are going to fix that
+		- small
+		+- practical
+		- focused
+		- annoying
+		+- not going to save the world
+	---- PROBLEM
+		- we set reminders and ignore them
+		- even best of tools are imperfect
+		- buy milk
+		- in the middle of the meeting
+		- snooze, done
+	
+
+	---- COMPETITORS
+		- none direct ones
+		- http://hellojarvis.io/ – super basic, poor experience, 2.3K likes
+			- 660 on PH
+			http://screencast.com/t/Plc8b7oN13
+			- do you see a problem with  that?
+		- http://www.mindnodes.com/remind
+			- same issue
+			- less marketing 
+	---- MARKET
+		- anybody with reminders?
+		- competitor got 3k likes from May with simplistic marketing model
+		- people on PH like it and use it
+
+	---- WHY MESSENGER BOT?
+		--- why chat bot?
+			-- bot
+				- open messenger
+				- type "remind me to buy milk tomorrow"
+			-- apple reminders
+				- open reminders
+				- find plus button
+				- type buy milk
+				- check "on date"
+				- select date and time (extra cognitive load)
+			-- siri
+				- open siri
+				- spell it 
+				- here is you google search for "buy ink tom sorrow" ;)
+		--- why messenger?
+			- there is only one problem with reminders – they don't work
+			- we set them and the we ignore them, since we have to do chores, but we don't like to do it
+			- procrastination is a big deal
+			- if you snooze it – it's gone, you will never remember to reschedule it
+			- we spend a lot of time in messenger, so it's the right time to poke you
+			- hard to ignore it since it's "unread message"
+	--- SOLUTION
+		--- ONE STEP FORWARD
+			- slack
+				- remind later
+		--- TWO STEPS FORWARD
+			- automatically reminding about ignored chores
+		--- THREE STEPS FORWARD
+			- behaviour science and psychology
+				- make canceling and marking as done a little harder, so you less likely to cheat on a bot
+				- demo
+
